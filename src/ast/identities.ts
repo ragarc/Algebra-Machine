@@ -1,0 +1,127 @@
+import type { Expr, ConstValue } from '../types';
+
+// Wildcard variables for identity patterns (e.g., 'A', 'B', 'C')
+export type PatternExpr =
+  | { kind: 'Const'; value: ConstValue } // Matches AST Expr ConstValue shape
+  | { kind: 'Wildcard'; name: string }
+  | { kind: 'Plus'; left: PatternExpr; right: PatternExpr }
+  | { kind: 'Minus'; left: PatternExpr; right: PatternExpr }
+  | { kind: 'Times'; left: PatternExpr; right: PatternExpr }
+  | { kind: 'Frac'; num: PatternExpr; den: PatternExpr }
+  | { kind: 'Pow'; base: PatternExpr; exponent: PatternExpr };
+
+export interface Identity {
+  id: string;
+  name: string;
+  pattern: PatternExpr; // The Left-Hand Side (LHS) pattern to match
+  result: PatternExpr;  // The Right-Hand Side (RHS) replacement
+}
+
+// Map of matched wildcard variable names to actual AST nodes
+export type Bindings = Record<string, Expr>;
+
+/**
+ * Registry of standard algebraic identities defined as AST patterns.
+ */
+export const MATH_IDENTITIES: Identity[] = [
+  {
+    id: 'distributive-right',
+    name: 'Right Distributive Property: AC + BC = (A + B)C',
+    pattern: {
+      kind: 'Plus',
+      left: { kind: 'Times', left: { kind: 'Wildcard', name: 'A' }, right: { kind: 'Wildcard', name: 'C' } },
+      right: { kind: 'Times', left: { kind: 'Wildcard', name: 'B' }, right: { kind: 'Wildcard', name: 'C' } },
+    },
+    result: {
+      kind: 'Times',
+      left: {
+        kind: 'Plus',
+        left: { kind: 'Wildcard', name: 'A' },
+        right: { kind: 'Wildcard', name: 'B' },
+      },
+      right: { kind: 'Wildcard', name: 'C' },
+    },
+  },
+  {
+    id: 'distributive-left-l',
+    name: 'Left Distributive Property: A(B + C) = AB + AC',
+    pattern: {
+      kind: 'Times',
+      left: { kind: 'Wildcard', name: 'A' },
+      right: {
+        kind: 'Plus',
+        left: { kind: 'Wildcard', name: 'B' },
+        right: { kind: 'Wildcard', name: 'C' },
+      },
+    },
+    result: {
+      kind: 'Plus',
+      left: { kind: 'Times', left: { kind: 'Wildcard', name: 'A' }, right: { kind: 'Wildcard', name: 'B' } },
+      right: { kind: 'Times', left: { kind: 'Wildcard', name: 'A' }, right: { kind: 'Wildcard', name: 'C' } },
+    },
+  },
+  {
+    id: 'distributive-left-r',
+    name: 'Left Distributive Property: AB + AC = A(B + C)',
+    pattern: {
+              kind: 'Plus',
+      left: { kind: 'Times', left: { kind: 'Wildcard', name: 'A' }, right: { kind: 'Wildcard', name: 'B' } },
+      right: { kind: 'Times', left: { kind: 'Wildcard', name: 'A' }, right: { kind: 'Wildcard', name: 'C' } },
+    },
+    result: {
+      kind: 'Times',
+      left: { kind: 'Wildcard', name: 'A' },
+      right: {
+        kind: 'Plus',
+        left: { kind: 'Wildcard', name: 'B' },
+        right: { kind: 'Wildcard', name: 'C' },
+      },
+    },
+  },
+  {
+    id: 'commutative-times',
+    name: 'Commutative Property of Multiplication: XY = YX',
+    pattern: {
+      kind: 'Times',
+      left: { kind: 'Wildcard', name: 'X' },
+      right: { kind: 'Wildcard', name: 'Y' },
+    },
+    result: {
+      kind: 'Times',
+      left: { kind: 'Wildcard', name: 'Y' },
+      right: { kind: 'Wildcard', name: 'X' },
+    },
+  },
+  {
+    id: 'additive-identity',
+    name: 'Additive Identity: A + 0 = A',
+    pattern: {
+      kind: 'Plus',
+      left: { kind: 'Wildcard', name: 'A' },
+      right: { kind: 'Const', value: {type:'number', value: 0} },
+    },
+    result: { kind: 'Wildcard', name: 'A' },
+  },
+  {
+    id: 'associative-plus',
+    name: 'Associative Property of Addition: (A + B) + C = A + (B + C)',
+    pattern: {
+      kind: 'Plus',
+      left: {
+        kind: 'Plus',
+        left: { kind: 'Wildcard', name: 'A' },
+        right: { kind: 'Wildcard', name: 'B' },
+      },
+      right: { kind: 'Wildcard', name: 'C' },
+    },
+    result: {
+      kind: 'Plus',
+      left: { kind: 'Wildcard', name: 'A' },
+      right: {
+        kind: 'Plus',
+        left: { kind: 'Wildcard', name: 'B' },
+        right: { kind: 'Wildcard', name: 'C' },
+      },
+    },
+  },
+];

@@ -1,0 +1,37 @@
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  font-family: system-ui, sans-serif;
+  background-color: #fefdfd;
+  color: #050505;
+}
+
+#root {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: left !important;
+}
+#math-display {
+  font-size: 2.2rem;
+  margin: 2rem 0;
+  text-align: center;
+}
+
+/* Base state: defined outline structure with transparent color */
+[data-node-id] {
+  outline: 2px solid transparent;
+  outline-offset: 1px;
+  transition: background-color 0.12s ease, outline-color 0.12s ease;
+  border-radius: 2px;
+}
+
+/* Hover state: only change the outline color and background */
+[data-node-id].ast-hovered {
+  outline-color: #ffd700 !important;
+  background-color: rgba(255, 215, 0, 0.15) !important;
+}
