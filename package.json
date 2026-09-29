@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://ragarc.github.io",
+  "homepage": "https://github.com/ragarc/Algebra-Machine.git",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
