@@ -19,8 +19,8 @@ function getChildNodes(expr: Expr): { label: string; node: Expr }[] {
       ];
     case 'Frac':
       return [
-        { label: 'num', node: expr.num },
-        { label: 'den', node: expr.den },
+        { label: 'numerator', node: expr.num },
+        { label: 'denominator', node: expr.den },
       ];
     case 'Pow':
       return [
@@ -28,11 +28,12 @@ function getChildNodes(expr: Expr): { label: string; node: Expr }[] {
         { label: 'exponent', node: expr.exponent },
       ];
     case 'Neg':
-    case 'Sqrt':
-    case 'Sin':
-    case 'Cos':
-    case 'Exp':
       return [{ label: 'term', node: expr.term }];
+    case 'FnCall':
+      return expr.args.map((arg, index) => ({
+        label: expr.args.length === 1 ? 'arg' : `arg${index + 1}`,
+        node: arg,
+      }));
     case 'Const':
     case 'Var':
       return [];
@@ -61,19 +62,13 @@ function getNodeDisplayLabel(expr: Expr): string {
     case 'Neg':
       return '- (unary)';
     case 'Times':
-      return '×';
+      return '*';
     case 'Frac':
       return '÷';
     case 'Pow':
       return '^';
-    case 'Sqrt':
-      return '√';
-    case 'Sin':
-      return 'sin';
-    case 'Cos':
-      return 'cos';
-    case 'Exp':
-      return 'exp';
+    case 'FnCall':
+      return expr.name;
   }
 }
 

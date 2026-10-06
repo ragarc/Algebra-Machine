@@ -1,4 +1,5 @@
-import type { Expr } from '../types';
+import { FUNCTION_REGISTRY } from '../types'; // Imported as a real value/object
+import type { Expr } from '../types';             // Imported as a type only
 import type { Token, TokenType } from './lexer';
 
 export class Parser {
@@ -154,33 +155,31 @@ export class Parser {
     throw new Error(`Unexpected token '${token.value}'`);
   }
 
-  private parseCommand(cmd: string): Expr {
-    switch (cmd) {
-      case '\\frac': {
-        this.expect('LBRACE', "Expected '{' for numerator");
-        const num = this.parseExpression();
-        this.expect('RBRACE', "Expected '}' after numerator");
+private parseCommand(cmd: string): Expr {
+  // 1. Keep special structural commands that aren't generic function calls
+  if (cmd === '\\frac') {
+    this.expect('LBRACE', "Expected '{' for numerator");
+    const num = this.parseExpression();
+    this.expect('RBRACE', "Expected '}' after numerator");
 
-        this.expect('LBRACE', "Expected '{' for denominator");
-        const den = this.parseExpression();
-        this.expect('RBRACE', "Expected '}' after denominator");
+    this.expect('LBRACE', "Expected '{' for denominator");
+    const den = this.parseExpression();
+    this.expect('RBRACE', "Expected '}' after denominator");
 
-        return { kind: 'Frac', num, den };
-      }
-
-      case '\\sqrt':
-        return { kind: 'Sqrt', term: this.parseArgumentBlock() };
-      case '\\sin':
-        return { kind: 'Sin', term: this.parseArgumentBlock() };
-      case '\\cos':
-        return { kind: 'Cos', term: this.parseArgumentBlock() };
-      case '\\exp':
-        return { kind: 'Exp', term: this.parseArgumentBlock() };
-      default:
-        throw new Error(`Unsupported command '${cmd}'`);
-    }
+    return { kind: 'Frac', num, den };
   }
 
+  // 2. Strip leading backslash (e.g. '\sinh' -> 'sinh')
+  const funcName = cmd.startsWith('\\') ? cmd.slice(1) : cmd;
+
+  // 3. Check if it exists in the function registry
+  if (FUNCTION_REGISTRY[funcName]) {
+    const term = this.parseArgumentBlock();
+    return { kind: 'FnCall', name: funcName, args: [term] };
+  }
+
+  throw new Error(`Unsupported command '${cmd}'`);
+}
   private parseArgumentBlock(): Expr {
     if (this.match('LBRACE')) {
       const expr = this.parseExpression();

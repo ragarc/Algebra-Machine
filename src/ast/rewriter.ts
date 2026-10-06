@@ -1,6 +1,7 @@
 import type { Expr } from '../types';
-import type { PatternExpr, Bindings } from './identities';
+import type { PatternExpr, Bindings } from '../identities/identities';
 import type { MatchResult } from './matcher';
+import { isSameExpr } from './matcher';
 
 /**
  * Replaces Wildcard placeholders in a RHS PatternExpr using the provided bindings
@@ -47,6 +48,12 @@ export function instantiatePattern(pattern: PatternExpr, bindings: Bindings): Ex
         base: instantiatePattern(pattern.base, bindings),
         exponent: instantiatePattern(pattern.exponent, bindings),
       };
+    case 'FnCall':
+      return {
+        kind: 'FnCall',
+        name: pattern.name,
+        args: pattern.args.map((arg) => instantiatePattern(arg, bindings)),
+      };
   }
 }
 
@@ -55,7 +62,7 @@ export function instantiatePattern(pattern: PatternExpr, bindings: Bindings): Ex
  * Returns a brand-new, immutably updated AST root.
  */
 export function replaceSubtree(rootExpr: Expr, targetExpr: Expr, replacement: Expr): Expr {
-  if (rootExpr === targetExpr) {
+  if (isSameExpr(rootExpr, targetExpr)) {
     return replacement;
   }
 
@@ -91,25 +98,37 @@ export function replaceSubtree(rootExpr: Expr, targetExpr: Expr, replacement: Ex
         exponent: replaceSubtree(rootExpr.exponent, targetExpr, replacement),
       };
     case 'Neg':
-      return { kind: 'Neg', term: replaceSubtree(rootExpr.term, targetExpr, replacement) };
-    case 'Sqrt':
-      return { kind: 'Sqrt', term: replaceSubtree(rootExpr.term, targetExpr, replacement) };
-    case 'Sin':
-      return { kind: 'Sin', term: replaceSubtree(rootExpr.term, targetExpr, replacement) };
-    case 'Cos':
-      return { kind: 'Cos', term: replaceSubtree(rootExpr.term, targetExpr, replacement) };
-    case 'Exp':
-      return { kind: 'Exp', term: replaceSubtree(rootExpr.term, targetExpr, replacement) };
+      return {
+        kind: 'Neg',
+        term: replaceSubtree(rootExpr.term, targetExpr, replacement),
+      };
+    case 'FnCall':
+      return {
+        kind: 'FnCall',
+        name: rootExpr.name,
+        args: rootExpr.args.map((arg) => replaceSubtree(arg, targetExpr, replacement)),
+      };
     case 'Const':
     case 'Var':
       return rootExpr;
   }
 }
 
-/**
- * Executes a full identity transformation on a target AST node within the main tree.
- */
-export function applyIdentity(rootExpr: Expr, targetExpr: Expr, match: MatchResult): Expr {
-  const rewrittenSubtree = instantiatePattern(match.identity.result, match.bindings);
-  return replaceSubtree(rootExpr, targetExpr, rewrittenSubtree);
+
+export function applyIdentity(
+  rootExpr: Expr,
+  targetExpr: Expr,
+  match: MatchResult
+): Expr {
+  const replacementPattern =
+    match.direction === 'forward'
+      ? match.identity.rhs
+      : match.identity.lhs;
+
+  const replacement = instantiatePattern(
+    replacementPattern,
+    match.bindings
+  );
+
+  return replaceSubtree(rootExpr, targetExpr, replacement);
 }
