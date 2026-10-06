@@ -83,11 +83,11 @@ export function toTaggedLatex(expr: Expr, rawLatex: string): Stage2Payload {
         astTagMap[id] = { kind: 'Times', label: 'Multiplication', subExpr: node };
 
         // Insert \cdot if BOTH operands are numeric constants (e.g., 3 · 4)
-        // const isLeftNumber =
-        //   node.left.kind === 'Const' && node.left.value.type === 'number';
+        const isLeftNumber =
+          node.left.kind === 'Const' && node.left.value.type === 'number';
         const isRightNumber =
           node.right.kind === 'Const' && node.right.value.type === 'number';
-        const needsDot = isRightNumber;
+        const needsDot = isRightNumber || isLeftNumber;
 
         const separator = needsDot ? ' \\cdot ' : '';
 
